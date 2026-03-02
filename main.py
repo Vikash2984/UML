@@ -29,7 +29,7 @@ def generate_uml(srs):
     data = json.loads(resp)
     return data["plantuml"], data.get("confidence")
 
-# ---------------- PlantUML Server (OFFICIAL ENCODER) ----------------
+# ---------------- PlantUML Server ----------------
 SERVER = "https://www.plantuml.com/plantuml/png/"
 
 def encode_6bit(b):
@@ -62,35 +62,70 @@ def plantuml_encode(text):
 def render_uml(uml_body):
     uml_body = uml_body.replace("```", "").strip()
     uml = f"@startuml\n{uml_body}\n@enduml"
-    url = SERVER + plantuml_encode(uml)
-    r = requests.get(url, timeout=20)
+    r = requests.get(SERVER + plantuml_encode(uml), timeout=20)
     return (r.content, None) if r.status_code == 200 else (None, f"PlantUML error {r.status_code}")
 
 # ---------------- UI ----------------
-st.set_page_config("AI UML Generator", layout="wide")
-st.title("AI-based UML Generator — Streamlit + Groq (PlantUML Server)")
+st.set_page_config(
+    page_title="AI UML Generator | CA2",
+    layout="wide"
+)
 
-if "srs" not in st.session_state: st.session_state.srs = SAMPLE_SRS
-if "uml" not in st.session_state: st.session_state.uml = ""
+# ---- Sidebar (compact details) ----
+with st.sidebar:
+    st.markdown("### 📘 CA2 Assignment")
+    st.markdown(
+        """
+        **AI-Based Automated UML Diagram Generator**
+
+        **Name:** Vikash Kumar Pandey  
+        **Roll No:** 10830622025  
+        **Semester:** 8th  
+        **Department:** AIML  
+
+        **Subject:** Software Engineering  
+        **Code:** OECAIML 801C
+        """
+    )
+
+# ---- Main title ----
+st.markdown("## AI-Based Automated UML Diagram Generator")
+
+# ---- State ----
+if "srs" not in st.session_state:
+    st.session_state.srs = SAMPLE_SRS
+if "uml" not in st.session_state:
+    st.session_state.uml = ""
 
 left, right = st.columns(2)
 
+# ---- LEFT ----
 with left:
-    srs = st.text_area("Input (SRS / description)", height=280, key="srs")
+    srs = st.text_area("Input (description)", height=280, key="srs")
     if st.button("Generate UML"):
         with st.spinner("Generating UML..."):
             uml, conf = generate_uml(srs)
         st.session_state.uml = uml
         st.success(f"Generated (confidence: {conf})")
         img, err = render_uml(uml)
-        if img: st.image(img)
-        else: st.error(err); st.code(uml)
+        if img:
+            st.image(img)
+        else:
+            st.error(err)
+            st.code(uml)
 
+# ---- RIGHT ----
 with right:
     uml_text = st.text_area("Generated PlantUML (editable)", height=280, key="uml")
     if st.button("Re-render edited PlantUML"):
         img, err = render_uml(uml_text)
-        if img: st.image(img)
-        else: st.error(err); st.code(uml_text)
+        if img:
+            st.image(img)
+        else:
+            st.error(err)
+            st.code(uml_text)
 
-st.caption("PlantUML rendered via server (cloud-safe, no Java). Ready for Render deployment.")
+st.caption(
+    "PlantUML rendered via server (cloud-safe). "
+    "Ready for Render & Railway deployment."
+)
